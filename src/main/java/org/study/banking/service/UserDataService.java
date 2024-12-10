@@ -1,5 +1,6 @@
 package org.study.banking.service;
 
+import com.google.common.math.LongMath;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,34 +12,38 @@ import org.study.banking.repository.UserDataRepository;
 public class UserDataService {
   private final UserDataRepository userDataRepository;
 
-  public Long getBalance(Long userId) {
+  public Double getBalance(Long userId) {
     Optional<UserData> userData = userDataRepository.findById(userId);
-    if (userData.isPresent()) {
-      return userData.get().getBalance();
-    } else {
-      return -1L;
-    }
+    return userData.map(data -> data.getBalance() / 100.0).orElse(-1.0);
   }
 
-  public Long takeMoney(Long userId, Long moneyAmount) {
+  public int takeMoney(Long userId, Double moneyAmount) {
     Optional<UserData> userData = userDataRepository.findById(userId);
     if (userData.isPresent()) {
-      if (userData.get().getBalance() >= moneyAmount) {
+      double moneyInCents = moneyAmount * 100;
+      Long balance = userData.get().getBalance();
+      if (balance >= moneyInCents) {
         UserData editedUserData = new UserData(userId);
-        editedUserData.setBalance(userData.get().getBalance() - moneyAmount);
+        editedUserData.setBalance(balance - (long) moneyInCents);
         userDataRepository.save(editedUserData);
-        return 1L;
-      } else return 0L;
-    } else return -1L;
+        return 1;
+      } else return 0;
+    } else return -1;
   }
 
-  public Long putMoney(Long userId, Long moneyAmount) {
+  public int putMoney(Long userId, Double moneyAmount) {
     Optional<UserData> userData = userDataRepository.findById(userId);
     if (userData.isPresent()) {
       UserData editedUserData = new UserData(userId);
-      editedUserData.setBalance(userData.get().getBalance() + moneyAmount);
+      double moneyInCents = moneyAmount * 100;
+      try {
+        editedUserData.setBalance(LongMath.checkedAdd(userData.get().getBalance(),
+            (long) moneyInCents));
+      } catch (ArithmeticException e) {
+        return 2;
+      }
       userDataRepository.save(editedUserData);
-      return 1L;
-    } else return 0L;
+      return 1;
+    } else return 0;
   }
 }
