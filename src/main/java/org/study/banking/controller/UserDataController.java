@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.study.banking.dto.UserDataDTO;
 import org.study.banking.service.UserDataService;
 
 @RestController
@@ -31,16 +32,21 @@ public class UserDataController {
       description = "Withdraws amount of money in rubles from a user's balance")
   @PutMapping(value = "/{userId}/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
-  public ResponseEntity<String> takeMoney(@PathVariable Long userId,
-                                          @RequestBody Double moneyAmount) {
-    int response = userDataService.takeMoney(userId, moneyAmount);
-    if (response == 1) {
-      return ResponseEntity.ok().build();
-    } else if (response == 0) {
-      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
-    } else {
-      return ResponseEntity.notFound().build();
+  public ResponseEntity<UserDataDTO> takeMoney(@PathVariable Long userId,
+                                               @RequestBody Double moneyAmount) {
+    UserDataDTO userDataDTO = userDataService.takeMoney(userId, moneyAmount);
+    switch (userDataDTO.getStatus()) {
+      case SUCCESS -> {
+        return ResponseEntity.ok().build();
+      }
+      case NOT_ENOUGH_MONEY -> {
+        return ResponseEntity.unprocessableEntity().build();
+      }
+      case USER_NOT_FOUND -> {
+        return ResponseEntity.notFound().build();
+      }
     }
+    return ResponseEntity.badRequest().build();
   }
 
   @Operation(summary = "Put money by user ID",
@@ -48,13 +54,18 @@ public class UserDataController {
   @PutMapping(value = "/{userId}/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> putMoney(@PathVariable Long userId,
                                          @RequestBody Double moneyAmount) {
-    int response = userDataService.putMoney(userId, moneyAmount);
-    if (response == 1) {
-      return ResponseEntity.ok().build();
-    } else if (response == 0) {
-      return ResponseEntity.notFound().build();
-    } else {
-      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+    var userDataDTO = userDataService.putMoney(userId, moneyAmount);
+    switch (userDataDTO.getStatus()) {
+      case SUCCESS -> {
+        return ResponseEntity.ok().build();
+      }
+      case USER_NOT_FOUND -> {
+        return ResponseEntity.notFound().build();
+      }
+      case FAILED -> {
+        return ResponseEntity.unprocessableEntity().build();
+      }
     }
+    return ResponseEntity.badRequest().build();
   }
 }
