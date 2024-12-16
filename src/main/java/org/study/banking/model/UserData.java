@@ -1,7 +1,6 @@
 package org.study.banking.model;
 
 import jakarta.persistence.*;
-import java.util.Set;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -16,8 +15,6 @@ public class UserData {
   private Long id;
   @Column(name = "balance")
   private Long balance;
-  @OneToMany(mappedBy = "userData")
-  private Set<Operation> operations;
 
   public UserData(Long userId) {
     this.id = userId;

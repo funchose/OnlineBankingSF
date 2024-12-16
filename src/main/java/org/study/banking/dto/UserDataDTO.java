@@ -21,4 +21,14 @@ public class UserDataDTO {
   public UserDataDTO(OperationStatus status) {
     this.status = status;
   }
+
+  public UserDataDTO setBalance(Double balance) {
+    this.balance = balance;
+    return this;
+  }
+
+  public UserDataDTO setStatus(OperationStatus status) {
+    this.status = status;
+    return this;
+  }
 }

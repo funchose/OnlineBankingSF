@@ -4,11 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum OperationType {
-  BALANCE_CHECK(1),
-  WITHDRAWAL(2),
-  DEPOSIT(3),
-  TRANSFER(4);
-
+  WITHDRAWAL(0),
+  DEPOSIT(1),
+  TRANSFER(2);
   private final int type;
 
   OperationType(int type) {

@@ -20,12 +20,16 @@ public class UserDataController {
       description = "Returns a user's balance in rubles")
   @GetMapping(value = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Double> getBalance(@PathVariable Long userId) {
-    Double response = userDataService.getBalance(userId);
-    if (response == -1.0) {
-      return ResponseEntity.notFound().build();
-    } else {
-      return ResponseEntity.ok().body(response);
+    var userDataDTO = userDataService.getBalance(userId);
+    switch (userDataDTO.getStatus()) {
+      case SUCCESS -> {
+        return ResponseEntity.ok().body(userDataDTO.getBalance());
+      }
+      case USER_NOT_FOUND -> {
+        return ResponseEntity.notFound().build();
+      }
     }
+    return ResponseEntity.badRequest().build();
   }
 
   @Operation(summary = "Take money by user ID",
