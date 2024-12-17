@@ -14,7 +14,7 @@ import org.study.banking.service.UserDataService;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Banking API")
+@Tag(name = "User's operations")
 public class UserDataController {
   private final UserDataService userDataService;
 
@@ -75,6 +75,8 @@ public class UserDataController {
     return ResponseEntity.badRequest().build();
   }
 
+  @Operation(summary = "Transfer money",
+      description = "Transfers money from one user to another")
   @PutMapping(value = "/{userId}/transfer", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<UserDataDTO> transferMoney(
       @PathVariable Long userId, @RequestBody TransferMoneyRequest request) {

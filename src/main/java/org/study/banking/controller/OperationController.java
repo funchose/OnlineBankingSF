@@ -1,5 +1,7 @@
 package org.study.banking.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -14,9 +16,11 @@ import org.study.banking.service.OperationService;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name ="Operations info")
 public class OperationController {
   private final OperationService operationService;
-
+  @Operation(summary = "Get operations list by user ID",
+      description = "Returns a list of user's operations between two dates")
   @PostMapping(value = "/{userId}/operations", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<List<OperationDTO>> getOperationList(
       @PathVariable Long userId, @RequestBody GetOperationListRequest request) {
