@@ -10,4 +10,5 @@ public class OperationDTO {
   private int type;
   private Long moneyAmount;
   private ZonedDateTime date;
+  private Long receiverId;
 }

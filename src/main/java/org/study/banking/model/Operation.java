@@ -27,11 +27,19 @@ public class Operation {
   Long moneyAmount;
   @Column(name = "date")
   ZonedDateTime date;
+  @Column(name = "receiver_id")
+  Long receiverId;
 
   public static class Builder {
     private final Long userId;
     private OperationType type;
     private Long moneyAmount;
+    private Long receiverId;
+
+    public Builder setReceiverId(Long receiverId) {
+      this.receiverId = receiverId;
+      return this;
+    }
 
     public Builder(Long userId) {
       this.userId = userId;
@@ -58,5 +66,6 @@ public class Operation {
     this.type = builder.type;
     this.moneyAmount = builder.moneyAmount;
     this.date = ZonedDateTime.now();
+    this.receiverId = builder.receiverId;
   }
 }

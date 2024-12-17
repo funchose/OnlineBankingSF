@@ -31,15 +31,12 @@ public class UserDataService {
     try {
       var userData = getUserData(userId);
       if (moneyInRubles <= getMoneyInRubles(userData.getBalance())) {
-        long updatedBalance = userData.getBalance() - getMoneyInPennies(moneyInRubles);
-        var updatedUserData = new UserData(userId, updatedBalance);
-        userDataRepository.save(updatedUserData);
+        saveDecreasedBalance(userId, moneyInRubles, userData);
         var operation = new Operation.Builder(userData.getId())
             .setMoneyAmount(getMoneyInPennies(moneyInRubles))
             .setOperationType(OperationType.WITHDRAWAL)
             .build();
         operationService.saveOperation(operation);
-        userDataDTO.setBalance(getMoneyInRubles(updatedBalance));
         userDataDTO.setStatus(OperationStatus.SUCCESS);
       } else {
         userDataDTO.setStatus(OperationStatus.NOT_ENOUGH_MONEY);
@@ -50,21 +47,23 @@ public class UserDataService {
     return userDataDTO;
   }
 
+  private void saveDecreasedBalance(Long userId, Double moneyInRubles, UserData userData) {
+    long updatedBalance = userData.getBalance() - getMoneyInPennies(moneyInRubles);
+    var updatedUserData = new UserData(userId, updatedBalance);
+    userDataRepository.save(updatedUserData);
+  }
+
   @Transactional
   public UserDataDTO putMoney(Long userId, Double moneyInRubles) {
     var userDataDTO = new UserDataDTO();
     try {
       var userData = getUserData(userId);
-      var updatedBalance = LongMath.checkedAdd(userData.getBalance(),
-                                               getMoneyInPennies(moneyInRubles));
-      var updatedUserData = new UserData(userId, updatedBalance);
-      userDataRepository.save(updatedUserData);
+      saveIncreasedBalance(userId, moneyInRubles, userData);
       var operation = new Operation.Builder(userData.getId())
           .setMoneyAmount(getMoneyInPennies(moneyInRubles))
           .setOperationType(OperationType.DEPOSIT)
           .build();
       operationService.saveOperation(operation);
-      userDataDTO.setBalance(getMoneyInRubles(updatedBalance));
       userDataDTO.setStatus(OperationStatus.SUCCESS);
     } catch (ArithmeticException e) {
       userDataDTO.setStatus(OperationStatus.FAILED);
@@ -72,6 +71,13 @@ public class UserDataService {
       userDataDTO.setStatus(OperationStatus.USER_NOT_FOUND);
     }
     return userDataDTO;
+  }
+
+  private void saveIncreasedBalance(Long userId, Double moneyInRubles, UserData userData) {
+    var updatedBalance = LongMath.checkedAdd(userData.getBalance(),
+        getMoneyInPennies(moneyInRubles));
+    var updatedUserData = new UserData(userId, updatedBalance);
+    userDataRepository.save(updatedUserData);
   }
 
   private UserData getUserData(Long userId) {
@@ -91,5 +97,37 @@ public class UserDataService {
     UserData userData = userDataRepository.findById(userId)
         .orElseThrow(() -> new RuntimeException("User is not found"));
     return new UserDataDTO().setBalance(getMoneyInRubles(userData.getBalance()));
+  }
+
+  @Transactional
+  public UserDataDTO transferMoney(Long senderId, Long receiverId, Double moneyInRubles) {
+    var senderDataDTO = new UserDataDTO();
+    var receiverDataDTO = new UserDataDTO();
+    try {
+      var senderData = getUserData(senderId);
+      var receiverData = getUserData(receiverId);
+      if (moneyInRubles <= getMoneyInRubles(senderData.getBalance())) {
+        saveDecreasedBalance(senderId, moneyInRubles, senderData);
+        senderDataDTO.setStatus(OperationStatus.SUCCESS);
+      } else {
+        senderDataDTO.setStatus(OperationStatus.NOT_ENOUGH_MONEY);
+        receiverDataDTO.setStatus(OperationStatus.FAILED);
+      }
+      if (senderDataDTO.getStatus().equals(OperationStatus.SUCCESS)) {
+        saveIncreasedBalance(receiverId, moneyInRubles, receiverData);
+        receiverDataDTO.setStatus(OperationStatus.SUCCESS);
+        var operation = new Operation.Builder(senderId)
+            .setMoneyAmount(getMoneyInPennies(moneyInRubles))
+            .setOperationType(OperationType.TRANSFER)
+            .setReceiverId(receiverId)
+            .build();
+        operationService.saveOperation(operation);
+      }
+    } catch (ArithmeticException e) {
+      receiverDataDTO.setStatus(OperationStatus.FAILED);
+    } catch (RuntimeException e) {
+      senderDataDTO.setStatus(OperationStatus.USER_NOT_FOUND);
+    }
+    return senderDataDTO;
   }
 }

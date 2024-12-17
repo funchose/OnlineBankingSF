@@ -8,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.study.banking.dto.UserDataDTO;
+import org.study.banking.request.DepositOrWithdrawRequest;
+import org.study.banking.request.TransferMoneyRequest;
 import org.study.banking.service.UserDataService;
 
 @RestController
@@ -37,8 +39,8 @@ public class UserDataController {
   @PutMapping(value = "/{userId}/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<UserDataDTO> takeMoney(@PathVariable Long userId,
-                                               @RequestBody Double moneyAmount) {
-    UserDataDTO userDataDTO = userDataService.takeMoney(userId, moneyAmount);
+                                               @RequestBody DepositOrWithdrawRequest request) {
+    UserDataDTO userDataDTO = userDataService.takeMoney(userId, request.getMoneyAmount());
     switch (userDataDTO.getStatus()) {
       case SUCCESS -> {
         return ResponseEntity.ok().build();
@@ -57,8 +59,8 @@ public class UserDataController {
       description = "Deposits amount of money in rubles to a user's balance")
   @PutMapping(value = "/{userId}/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> putMoney(@PathVariable Long userId,
-                                         @RequestBody Double moneyAmount) {
-    var userDataDTO = userDataService.putMoney(userId, moneyAmount);
+                                         @RequestBody DepositOrWithdrawRequest request) {
+    var userDataDTO = userDataService.putMoney(userId, request.getMoneyAmount());
     switch (userDataDTO.getStatus()) {
       case SUCCESS -> {
         return ResponseEntity.ok().build();
@@ -71,5 +73,28 @@ public class UserDataController {
       }
     }
     return ResponseEntity.badRequest().build();
+  }
+
+  @PutMapping(value = "/{userId}/transfer", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<UserDataDTO> transferMoney(
+      @PathVariable Long userId, @RequestBody TransferMoneyRequest request) {
+    if (userId.equals(request.getReceiverId())) {
+      return ResponseEntity.unprocessableEntity().build();
+    } else {
+      var userDataDTO = userDataService.transferMoney(userId,
+          request.getReceiverId(), request.getMoneyAmount());
+      switch (userDataDTO.getStatus()) {
+        case SUCCESS -> {
+          return ResponseEntity.ok().build();
+        }
+        case USER_NOT_FOUND -> {
+          return ResponseEntity.notFound().build();
+        }
+        case NOT_ENOUGH_MONEY -> {
+          return ResponseEntity.unprocessableEntity().build();
+        }
+      }
+      return ResponseEntity.badRequest().build();
+    }
   }
 }
